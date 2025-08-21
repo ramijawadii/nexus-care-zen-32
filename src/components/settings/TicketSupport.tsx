@@ -17,7 +17,8 @@ import {
   Settings,
   Bug,
   HelpCircle,
-  Zap
+  Zap,
+  Headphones
 } from 'lucide-react';
 
 interface SupportTeam {
