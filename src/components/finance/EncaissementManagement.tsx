@@ -419,9 +419,9 @@ const EncaissementManagement = () => {
               amount: newEncaissement.amount || 0,
               status: newEncaissement.status || 'En attente',
               paymentMethod: newEncaissement.paymentMethod || 'Espèces',
-              invoice: newEncaissement.invoice || '',
+              invoice: newEncaissement.reference || '',
               patient: newEncaissement.patient || '',
-              service: newEncaissement.service || ''
+              service: newEncaissement.type || ''
             };
             
             setEncaissementsData(prev => [newEncaissementData, ...prev]);
@@ -433,14 +433,16 @@ const EncaissementManagement = () => {
       {showEditModal && selectedEncaissement && (
         <EditEncaissementModal
           encaissement={{
+            id: selectedEncaissement.id,
             date: selectedEncaissement.date,
             patient: selectedEncaissement.patient,
-            service: selectedEncaissement.service,
+            type: selectedEncaissement.service,
             amount: selectedEncaissement.amount,
             paymentMethod: selectedEncaissement.paymentMethod,
+            reference: selectedEncaissement.invoice,
             status: selectedEncaissement.status,
-            invoice: selectedEncaissement.invoice,
-            notes: selectedEncaissement.description
+            notes: selectedEncaissement.description,
+            insurance: null
           }}
           open={showEditModal}
           onClose={() => {
@@ -456,9 +458,9 @@ const EncaissementManagement = () => {
               amount: updatedEncaissement.amount || selectedEncaissement.amount,
               status: updatedEncaissement.status || selectedEncaissement.status,
               paymentMethod: updatedEncaissement.paymentMethod || selectedEncaissement.paymentMethod,
-              invoice: updatedEncaissement.invoice || selectedEncaissement.invoice,
+              invoice: updatedEncaissement.reference || selectedEncaissement.invoice,
               patient: updatedEncaissement.patient || selectedEncaissement.patient,
-              service: updatedEncaissement.service || selectedEncaissement.service
+              service: updatedEncaissement.type || selectedEncaissement.service
             };
             
             setEncaissementsData(prev => 
