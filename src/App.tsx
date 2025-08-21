@@ -22,6 +22,7 @@ import RecouvrementAssurance from './pages/RecouvrementAssurance';
 import Facturation from './pages/Facturation';
 import Taxes from './pages/Taxes';
 import RapportsComptables from './pages/RapportsComptables';
+import Tickets from './pages/Tickets';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ function App() {
             <Route path="/facturation" element={<Facturation />} />
             <Route path="/taxes" element={<Taxes />} />
             <Route path="/rapports-comptables" element={<RapportsComptables />} />
+            <Route path="/tickets" element={<Tickets />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
