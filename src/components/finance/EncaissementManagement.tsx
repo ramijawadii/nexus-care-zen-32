@@ -411,11 +411,11 @@ const EncaissementManagement = () => {
           open={showAddModal}
           onClose={() => setShowAddModal(false)}
           onSave={(newEncaissement) => {
-            // Ensure the new encaissement matches the state structure
+            // Map the modal data to the state structure
             const newEncaissementData = {
-              id: newEncaissement.id || 'ENC-' + String(Date.now()).slice(-3),
+              id: 'ENC-' + String(Date.now()).slice(-3),
               date: newEncaissement.date || new Date().toISOString().split('T')[0],
-              description: newEncaissement.description || '',
+              description: newEncaissement.notes || '',
               amount: newEncaissement.amount || 0,
               status: newEncaissement.status || 'En attente',
               paymentMethod: newEncaissement.paymentMethod || 'Espèces',
@@ -432,18 +432,27 @@ const EncaissementManagement = () => {
 
       {showEditModal && selectedEncaissement && (
         <EditEncaissementModal
-          encaissement={selectedEncaissement}
+          encaissement={{
+            date: selectedEncaissement.date,
+            patient: selectedEncaissement.patient,
+            service: selectedEncaissement.service,
+            amount: selectedEncaissement.amount,
+            paymentMethod: selectedEncaissement.paymentMethod,
+            status: selectedEncaissement.status,
+            invoice: selectedEncaissement.invoice,
+            notes: selectedEncaissement.description
+          }}
           open={showEditModal}
           onClose={() => {
             setShowEditModal(false);
             setSelectedEncaissement(null);
           }}
           onSave={(updatedEncaissement) => {
-            // Ensure the updated encaissement matches the state structure
+            // Map the modal data back to the state structure
             const updatedEncaissementData = {
-              id: updatedEncaissement.id || selectedEncaissement.id,
+              id: selectedEncaissement.id,
               date: updatedEncaissement.date || selectedEncaissement.date,
-              description: updatedEncaissement.description || selectedEncaissement.description,
+              description: updatedEncaissement.notes || selectedEncaissement.description,
               amount: updatedEncaissement.amount || selectedEncaissement.amount,
               status: updatedEncaissement.status || selectedEncaissement.status,
               paymentMethod: updatedEncaissement.paymentMethod || selectedEncaissement.paymentMethod,

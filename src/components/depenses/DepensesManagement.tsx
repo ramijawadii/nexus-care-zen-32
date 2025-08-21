@@ -445,7 +445,18 @@ const DepensesManagement = () => {
       {/* Modals */}
       {showEditModal && selectedExpense && (
         <EditExpenseModal
-          expense={selectedExpense}
+          expense={{
+            id: selectedExpense.id,
+            date: selectedExpense.date,
+            supplier: selectedExpense.supplier,
+            category: selectedExpense.category,
+            amount: selectedExpense.amount,
+            paymentMethod: selectedExpense.paymentMethod,
+            receipt: selectedExpense.invoice,
+            status: selectedExpense.status,
+            notes: selectedExpense.description,
+            budgetCategory: selectedExpense.category
+          }}
           open={showEditModal}
           onClose={() => {
             setShowEditModal(false);
@@ -455,14 +466,14 @@ const DepensesManagement = () => {
             const updatedExpenseData = {
               id: updatedExpense.id || selectedExpense.id,
               date: updatedExpense.date || selectedExpense.date,
-              description: updatedExpense.description || selectedExpense.description,
+              description: updatedExpense.notes || selectedExpense.description,
               amount: updatedExpense.amount || selectedExpense.amount,
               status: updatedExpense.status || selectedExpense.status,
               supplier: updatedExpense.supplier || selectedExpense.supplier,
               category: updatedExpense.category || selectedExpense.category,
-              invoice: updatedExpense.invoice || selectedExpense.invoice,
+              invoice: updatedExpense.receipt || selectedExpense.invoice,
               paymentMethod: updatedExpense.paymentMethod || selectedExpense.paymentMethod,
-              recurring: updatedExpense.recurring || selectedExpense.recurring
+              recurring: selectedExpense.recurring
             };
             
             setExpensesData(prev => 
