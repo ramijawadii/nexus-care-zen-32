@@ -411,7 +411,20 @@ const EncaissementManagement = () => {
           open={showAddModal}
           onClose={() => setShowAddModal(false)}
           onSave={(newEncaissement) => {
-            setEncaissementsData(prev => [newEncaissement, ...prev]);
+            // Ensure the new encaissement matches the state structure
+            const newEncaissementData = {
+              id: newEncaissement.id || 'ENC-' + String(Date.now()).slice(-3),
+              date: newEncaissement.date || new Date().toISOString().split('T')[0],
+              description: newEncaissement.description || '',
+              amount: newEncaissement.amount || 0,
+              status: newEncaissement.status || 'En attente',
+              paymentMethod: newEncaissement.paymentMethod || 'Espèces',
+              invoice: newEncaissement.invoice || '',
+              patient: newEncaissement.patient || '',
+              service: newEncaissement.service || ''
+            };
+            
+            setEncaissementsData(prev => [newEncaissementData, ...prev]);
             setShowAddModal(false);
           }}
         />
@@ -426,8 +439,21 @@ const EncaissementManagement = () => {
             setSelectedEncaissement(null);
           }}
           onSave={(updatedEncaissement) => {
+            // Ensure the updated encaissement matches the state structure
+            const updatedEncaissementData = {
+              id: updatedEncaissement.id || selectedEncaissement.id,
+              date: updatedEncaissement.date || selectedEncaissement.date,
+              description: updatedEncaissement.description || selectedEncaissement.description,
+              amount: updatedEncaissement.amount || selectedEncaissement.amount,
+              status: updatedEncaissement.status || selectedEncaissement.status,
+              paymentMethod: updatedEncaissement.paymentMethod || selectedEncaissement.paymentMethod,
+              invoice: updatedEncaissement.invoice || selectedEncaissement.invoice,
+              patient: updatedEncaissement.patient || selectedEncaissement.patient,
+              service: updatedEncaissement.service || selectedEncaissement.service
+            };
+            
             setEncaissementsData(prev => 
-              prev.map(e => e.id === updatedEncaissement.id ? updatedEncaissement : e)
+              prev.map(e => e.id === updatedEncaissementData.id ? updatedEncaissementData : e)
             );
             setShowEditModal(false);
             setSelectedEncaissement(null);

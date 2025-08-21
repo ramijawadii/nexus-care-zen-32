@@ -452,8 +452,21 @@ const DepensesManagement = () => {
             setSelectedExpense(null);
           }}
           onSave={(updatedExpense) => {
+            const updatedExpenseData = {
+              id: updatedExpense.id || selectedExpense.id,
+              date: updatedExpense.date || selectedExpense.date,
+              description: updatedExpense.description || selectedExpense.description,
+              amount: updatedExpense.amount || selectedExpense.amount,
+              status: updatedExpense.status || selectedExpense.status,
+              supplier: updatedExpense.supplier || selectedExpense.supplier,
+              category: updatedExpense.category || selectedExpense.category,
+              invoice: updatedExpense.invoice || selectedExpense.invoice,
+              paymentMethod: updatedExpense.paymentMethod || selectedExpense.paymentMethod,
+              recurring: updatedExpense.recurring || selectedExpense.recurring
+            };
+            
             setExpensesData(prev => 
-              prev.map(e => e.id === updatedExpense.id ? updatedExpense : e)
+              prev.map(e => e.id === updatedExpenseData.id ? updatedExpenseData : e)
             );
             setShowEditModal(false);
             setSelectedExpense(null);
