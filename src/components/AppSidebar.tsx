@@ -19,7 +19,8 @@ import {
   ShieldCheck,
   FileText,
   Receipt,
-  Globe
+  Globe,
+  Headphones
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
@@ -64,10 +65,11 @@ const toolsItems = [
   { icon: UsersIcon, label: 'Paie & Staff', path: '/payroll' },
 ];
 
-// Independent Items
+// Independent Items - Updated to include Tickets
 const independentItems = [
   { icon: Home, label: 'Tableau de Bord', path: '/' },
   { icon: CreditCard, label: 'Abonnement', path: '/billing' },
+  { icon: Headphones, label: 'Support', path: '/tickets' },
   { icon: Settings, label: 'Paramètres', path: '/settings' },
 ];
 
@@ -156,11 +158,11 @@ const AppSidebar = () => {
 
         <SidebarSeparator />
 
-        {/* Independent Items - Billing and Settings */}
+        {/* Independent Items - Billing, Support, and Settings */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {renderMenuItems([independentItems[1], independentItems[2]])}
+              {renderMenuItems([independentItems[1], independentItems[2], independentItems[3]])}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
