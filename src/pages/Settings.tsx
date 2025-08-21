@@ -15,6 +15,7 @@ import EmployeeSettings from '../components/employee-management/EmployeeSettings
 import PayrollSettings from '../components/finance/payroll/PayrollSettings';
 import PayrollAutomation from '../components/finance/payroll/PayrollAutomation';
 import PayrollSecurity from '../components/finance/payroll/PayrollSecurity';
+import TicketSupport from '../components/settings/TicketSupport';
 import { 
   Building2,
   Users,
@@ -27,7 +28,8 @@ import {
   FileText,
   CreditCard,
   UserCheck,
-  Database
+  Database,
+  Headphones
 } from 'lucide-react';
 
 const Settings = () => {
@@ -48,7 +50,7 @@ const Settings = () => {
             <main className="p-6">
               <Tabs defaultValue="general" className="space-y-6">
                 <div className="overflow-x-auto">
-                  <TabsList className="grid w-full grid-cols-12 bg-gray-100 min-w-[800px]">
+                  <TabsList className="grid w-full grid-cols-13 bg-gray-100 min-w-[900px]">
                     <TabsTrigger value="general" className="flex items-center space-x-2">
                       <Building2 className="w-4 h-4" />
                       <span className="hidden md:inline">Général</span>
@@ -96,6 +98,10 @@ const Settings = () => {
                     <TabsTrigger value="integrations" className="flex items-center space-x-2">
                       <Zap className="w-4 h-4" />
                       <span className="hidden md:inline">Intégrations</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="tickets" className="flex items-center space-x-2">
+                      <Headphones className="w-4 h-4" />
+                      <span className="hidden md:inline">Tickets</span>
                     </TabsTrigger>
                   </TabsList>
                 </div>
@@ -169,6 +175,12 @@ const Settings = () => {
                 <TabsContent value="integrations" className="space-y-6">
                   <ScrollArea className="h-[600px]">
                     <IntegrationSettings />
+                  </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="tickets" className="space-y-6">
+                  <ScrollArea className="h-[600px]">
+                    <TicketSupport />
                   </ScrollArea>
                 </TabsContent>
               </Tabs>
