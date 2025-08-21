@@ -1,219 +1,185 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Plus, 
+  Search, 
+  Filter, 
+  Eye, 
+  Edit, 
+  Download, 
+  DollarSign,
+  TrendingUp,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  CreditCard,
+  Calendar,
+  User,
+  FileText,
+  BarChart3
+} from 'lucide-react';
 import AddEncaissementModal from './AddEncaissementModal';
 import EditEncaissementModal from './EditEncaissementModal';
-import EncaissementReports from './EncaissementReports';
 import EncaissementContextMenu from './EncaissementContextMenu';
-import { 
-  TrendingUp, 
-  AlertTriangle, 
-  CreditCard, 
-  DollarSign, 
-  Users, 
-  CheckCircle, 
-  Plus,
-  Download,
-  Filter,
-  Search,
-  Calendar,
-  FileText,
-  Edit,
-  Trash2,
-  Eye,
-  BarChart3,
-  AlertCircle,
-  Clock,
-  Banknote
-} from 'lucide-react';
+import EncaissementReports from './EncaissementReports';
+import InvoiceDetailView from '../billing/InvoiceDetailView';
 
 const EncaissementManagement = () => {
-  const [showReports, setShowReports] = useState(false);
+  const [activeTab, setActiveTab] = useState('management');
+  const [selectedEncaissement, setSelectedEncaissement] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingEncaissement, setEditingEncaissement] = useState(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [encaissementToDelete, setEncaissementToDelete] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showInvoiceDetail, setShowInvoiceDetail] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
 
-  // Sample encaissement data
   const [encaissementsData, setEncaissementsData] = useState([
     {
       id: 'ENC-001',
-      date: '2024-02-08',
-      patient: 'Marie Dubois',
-      type: 'Consultation',
-      amount: 65.00,
-      paymentMethod: 'Carte',
-      reference: 'FACT-2024-001',
+      date: '2024-02-05',
+      description: 'Consultation générale - Dr. Ahmed',
+      amount: 50.00,
       status: 'Encaissé',
-      notes: 'Paiement consultation générale',
-      insurance: null
+      paymentMethod: 'Espèces',
+      invoice: 'FAC-2024-001',
+      patient: 'Ahmed Ben Ali',
+      service: 'Consultation générale'
     },
     {
       id: 'ENC-002',
-      date: '2024-02-07',
-      patient: 'Jean Martin',
-      type: 'Consultation spécialisée',
+      date: '2024-02-04',
+      description: 'Consultation spécialisée - Dr. Sarah',
       amount: 120.00,
-      paymentMethod: 'Virement',
-      reference: 'FACT-2024-002',
       status: 'En attente',
-      notes: 'Attente validation assurance',
-      insurance: 'CPAM'
+      paymentMethod: 'Carte',
+      invoice: 'FAC-2024-002',
+      patient: 'Fatma Cherif',
+      service: 'Consultation spécialisée'
     },
     {
       id: 'ENC-003',
-      date: '2024-02-06',
-      patient: 'Sophie Laurent',
-      type: 'Acte technique',
-      amount: 180.00,
-      paymentMethod: 'Chèque',
-      reference: 'FACT-2024-003',
-      status: 'Partiel',
-      notes: 'Paiement partiel - reste 80€',
-      insurance: 'Mutuelle MAAF'
-    },
-    {
-      id: 'ENC-004',
-      date: '2024-02-05',
-      patient: 'Pierre Moreau',
-      type: 'Téléconsultation',
-      amount: 45.00,
-      paymentMethod: 'Espèces',
-      reference: 'FACT-2024-004',
-      status: 'Encaissé',
-      notes: 'Paiement immédiat',
-      insurance: null
-    },
-    {
-      id: 'ENC-005',
-      date: '2024-02-04',
-      patient: 'Anna Belabes',
-      type: 'Suivi médical',
-      amount: 85.00,
-      paymentMethod: 'Carte',
-      reference: 'FACT-2024-005',
-      status: 'En litige',
-      notes: 'Contestation assurance en cours',
-      insurance: 'CNAM'
+      date: '2024-02-03',
+      description: 'Suivi médical - Dr. Mohamed',
+      amount: 75.00,
+      status: 'Échoué',
+      paymentMethod: 'Virement',
+      invoice: 'FAC-2024-003',
+      patient: 'Mohamed Trabelsi',
+      service: 'Suivi médical'
     }
   ]);
 
-  // Filters state
   const [filters, setFilters] = useState({
     searchTerm: '',
-    type: 'all',
-    paymentMethod: 'all',
-    status: 'all',
-    insurance: 'all',
+    status: '',
+    paymentMethod: '',
     dateFrom: '',
-    dateTo: '',
-    amountMin: '',
-    amountMax: ''
+    dateTo: ''
   });
 
-  const handleAddEncaissement = (newEncaissement) => {
-    const id = `ENC-${String(encaissementsData.length + 1).padStart(3, '0')}`;
-    setEncaissementsData(prev => [...prev, { ...newEncaissement, id }]);
-  };
+  const [filteredData, setFilteredData] = useState(encaissementsData);
 
-  const handleEditEncaissement = (encaissement) => {
-    setEditingEncaissement(encaissement);
-  };
-
-  const handleSaveEncaissement = (updatedEncaissement) => {
-    setEncaissementsData(prev => 
-      prev.map(enc => 
-        enc.id === updatedEncaissement.id ? updatedEncaissement : enc
-      )
-    );
-  };
-
-  const handleDeleteEncaissement = (encaissement) => {
-    setEncaissementToDelete(encaissement);
-    setDeleteConfirmOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (encaissementToDelete) {
-      setEncaissementsData(prev => 
-        prev.filter(enc => enc.id !== encaissementToDelete.id)
-      );
-      setDeleteConfirmOpen(false);
-      setEncaissementToDelete(null);
-    }
-  };
-
-  // Filtered data
-  const filteredEncaissements = useMemo(() => {
-    return encaissementsData.filter(enc => {
+  React.useEffect(() => {
+    let filtered = encaissementsData.filter(item => {
       const matchesSearch = filters.searchTerm === '' || 
-        enc.patient.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        enc.type.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        enc.reference.toLowerCase().includes(filters.searchTerm.toLowerCase());
+        item.description.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        item.patient.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        item.invoice.toLowerCase().includes(filters.searchTerm.toLowerCase());
       
-      const matchesType = filters.type === 'all' || enc.type === filters.type;
-      const matchesPaymentMethod = filters.paymentMethod === 'all' || enc.paymentMethod === filters.paymentMethod;
-      const matchesStatus = filters.status === 'all' || enc.status === filters.status;
-      const matchesInsurance = filters.insurance === 'all' || enc.insurance === filters.insurance;
+      const matchesStatus = filters.status === '' || filters.status === 'all' || item.status === filters.status;
+      const matchesPaymentMethod = filters.paymentMethod === '' || filters.paymentMethod === 'all' || item.paymentMethod === filters.paymentMethod;
       
-      const matchesDateFrom = filters.dateFrom === '' || enc.date >= filters.dateFrom;
-      const matchesDateTo = filters.dateTo === '' || enc.date <= filters.dateTo;
-      
-      const matchesAmountMin = filters.amountMin === '' || enc.amount >= parseFloat(filters.amountMin);
-      const matchesAmountMax = filters.amountMax === '' || enc.amount <= parseFloat(filters.amountMax);
+      const matchesDateFrom = filters.dateFrom === '' || item.date >= filters.dateFrom;
+      const matchesDateTo = filters.dateTo === '' || item.date <= filters.dateTo;
 
-      return matchesSearch && matchesType && matchesPaymentMethod && matchesStatus && 
-             matchesInsurance && matchesDateFrom && matchesDateTo && matchesAmountMin && matchesAmountMax;
+      return matchesSearch && matchesStatus && matchesPaymentMethod && matchesDateFrom && matchesDateTo;
     });
+    setFilteredData(filtered);
   }, [filters, encaissementsData]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Encaissé': return 'bg-green-100 text-green-800';
       case 'En attente': return 'bg-yellow-100 text-yellow-800';
-      case 'Partiel': return 'bg-orange-100 text-orange-800';
-      case 'En litige': return 'bg-red-100 text-red-800';
+      case 'Échoué': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getPaymentIcon = (method: string) => {
-    switch (method) {
-      case 'Carte': return CreditCard;
-      case 'Espèces': return Banknote;
-      case 'Virement': return DollarSign;
-      case 'Chèque': return FileText;
-      default: return DollarSign;
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'Encaissé': return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'En attente': return <Clock className="w-4 h-4 text-yellow-600" />;
+      case 'Échoué': return <AlertTriangle className="w-4 h-4 text-red-600" />;
+      default: return <Clock className="w-4 h-4 text-gray-600" />;
     }
   };
 
-  // Calculate stats
-  const totalEncaisse = filteredEncaissements
-    .filter(enc => enc.status === 'Encaissé')
-    .reduce((sum, enc) => sum + enc.amount, 0);
-  
-  const totalEnAttente = filteredEncaissements
-    .filter(enc => enc.status === 'En attente')
-    .reduce((sum, enc) => sum + enc.amount, 0);
+  const handleRowClick = (encaissement) => {
+    // Convert encaissement to invoice format for the detail view
+    const invoiceData = {
+      id: encaissement.id,
+      date: encaissement.date,
+      description: encaissement.description,
+      amount: encaissement.amount,
+      status: encaissement.status === 'Encaissé' ? 'paid' : encaissement.status === 'En attente' ? 'pending' : 'failed',
+      invoice: encaissement.invoice
+    };
+    setSelectedInvoice(invoiceData);
+    setShowInvoiceDetail(true);
+  };
 
-  const totalPartiel = filteredEncaissements
-    .filter(enc => enc.status === 'Partiel')
-    .reduce((sum, enc) => sum + enc.amount, 0);
+  const handleBackToList = () => {
+    setShowInvoiceDetail(false);
+    setSelectedInvoice(null);
+  };
 
-  const enLitige = filteredEncaissements.filter(enc => enc.status === 'En litige').length;
+  const totalCollected = filteredData.filter(item => item.status === 'Encaissé').reduce((sum, item) => sum + item.amount, 0);
+  const totalPending = filteredData.filter(item => item.status === 'En attente').reduce((sum, item) => sum + item.amount, 0);
+  const totalFailed = filteredData.filter(item => item.status === 'Échoué').reduce((sum, item) => sum + item.amount, 0);
 
-  if (showReports) {
-    return <EncaissementReports onBack={() => setShowReports(false)} />;
+  if (activeTab === 'reports') {
+    return <EncaissementReports onBack={() => setActiveTab('management')} />;
+  }
+
+  if (showInvoiceDetail && selectedInvoice) {
+    return (
+      <InvoiceDetailView 
+        invoice={selectedInvoice}
+        onBack={handleBackToList}
+      />
+    );
   }
 
   return (
     <div className="space-y-6">
-      {/* Quick Stats Overview */}
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-semibold text-text-primary">Encaissements & Collections</h2>
+          <p className="text-text-secondary">Suivi des paiements et collections de votre cabinet</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <Button variant="outline" onClick={() => setActiveTab('reports')}>
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Rapports
+          </Button>
+          <Button variant="outline">
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+          <Button onClick={() => setShowAddModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvel Encaissement
+          </Button>
+        </div>
+      </div>
+
+      {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -221,8 +187,8 @@ const EncaissementManagement = () => {
               <TrendingUp className="w-8 h-8 text-green-600 mr-3" />
               <div>
                 <p className="text-sm text-text-secondary">Total Encaissé</p>
-                <p className="text-xl font-bold text-text-primary">{totalEncaisse.toLocaleString()} TND</p>
-                <p className="text-sm text-green-600">Ce mois</p>
+                <p className="text-xl font-bold text-text-primary">{totalCollected.toFixed(2)} TND</p>
+                <p className="text-sm text-green-600">+8.2% vs mois dernier</p>
               </div>
             </div>
           </CardContent>
@@ -234,8 +200,8 @@ const EncaissementManagement = () => {
               <Clock className="w-8 h-8 text-yellow-600 mr-3" />
               <div>
                 <p className="text-sm text-text-secondary">En Attente</p>
-                <p className="text-xl font-bold text-text-primary">{totalEnAttente.toLocaleString()} TND</p>
-                <p className="text-sm text-yellow-600">À traiter</p>
+                <p className="text-xl font-bold text-text-primary">{totalPending.toFixed(2)} TND</p>
+                <p className="text-sm text-yellow-600">À encaisser</p>
               </div>
             </div>
           </CardContent>
@@ -244,24 +210,26 @@ const EncaissementManagement = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <AlertTriangle className="w-8 h-8 text-orange-600 mr-3" />
+              <AlertTriangle className="w-8 h-8 text-red-600 mr-3" />
               <div>
-                <p className="text-sm text-text-secondary">Paiements Partiels</p>
-                <p className="text-xl font-bold text-text-primary">{totalPartiel.toLocaleString()} TND</p>
-                <p className="text-sm text-orange-600">À compléter</p>
+                <p className="text-sm text-text-secondary">Échoués</p>
+                <p className="text-xl font-bold text-text-primary">{totalFailed.toFixed(2)} TND</p>
+                <p className="text-sm text-red-600">À retraiter</p>
               </div>
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center">
-              <AlertCircle className="w-8 h-8 text-red-600 mr-3" />
+              <DollarSign className="w-8 h-8 text-blue-600 mr-3" />
               <div>
-                <p className="text-sm text-text-secondary">En Litige</p>
-                <p className="text-xl font-bold text-text-primary">{enLitige}</p>
-                <p className="text-sm text-red-600">À résoudre</p>
+                <p className="text-sm text-text-secondary">Taux d'Encaissement</p>
+                <p className="text-xl font-bold text-text-primary">
+                  {((totalCollected / (totalCollected + totalPending + totalFailed)) * 100).toFixed(1)}%
+                </p>
+                <p className="text-sm text-blue-600">Ce mois</p>
               </div>
             </div>
           </CardContent>
@@ -271,23 +239,15 @@ const EncaissementManagement = () => {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="w-5 h-5" />
-              Filtres de Recherche
-            </CardTitle>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" onClick={() => setShowReports(true)}>
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Rapports
-              </Button>
-            </div>
-          </div>
+          <CardTitle className="flex items-center">
+            <Filter className="w-5 h-5 mr-2" />
+            Filtres
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-muted" />
               <Input
                 placeholder="Rechercher..."
                 value={filters.searchTerm}
@@ -296,17 +256,15 @@ const EncaissementManagement = () => {
               />
             </div>
             
-            <Select value={filters.type} onValueChange={(value) => setFilters({ ...filters, type: value })}>
+            <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value })}>
               <SelectTrigger>
-                <SelectValue placeholder="Type de service" />
+                <SelectValue placeholder="Statut" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous</SelectItem>
-                <SelectItem value="Consultation">Consultation</SelectItem>
-                <SelectItem value="Consultation spécialisée">Consultation spécialisée</SelectItem>
-                <SelectItem value="Acte technique">Acte technique</SelectItem>
-                <SelectItem value="Téléconsultation">Téléconsultation</SelectItem>
-                <SelectItem value="Suivi médical">Suivi médical</SelectItem>
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="Encaissé">Encaissé</SelectItem>
+                <SelectItem value="En attente">En attente</SelectItem>
+                <SelectItem value="Échoué">Échoué</SelectItem>
               </SelectContent>
             </Select>
 
@@ -323,74 +281,19 @@ const EncaissementManagement = () => {
               </SelectContent>
             </Select>
 
-            <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous</SelectItem>
-                <SelectItem value="Encaissé">Encaissé</SelectItem>
-                <SelectItem value="En attente">En attente</SelectItem>
-                <SelectItem value="Partiel">Partiel</SelectItem>
-                <SelectItem value="En litige">En litige</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <Input
+              type="date"
+              placeholder="Date début"
+              value={filters.dateFrom}
+              onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+            />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-sm font-medium text-text-secondary mb-1 block">Du</label>
-                <Input
-                  type="date"
-                  value={filters.dateFrom}
-                  onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-text-secondary mb-1 block">Au</label>
-                <Input
-                  type="date"
-                  value={filters.dateTo}
-                  onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <Input
-                type="number"
-                placeholder="Montant min"
-                value={filters.amountMin}
-                onChange={(e) => setFilters({ ...filters, amountMin: e.target.value })}
-              />
-              <Input
-                type="number"
-                placeholder="Montant max"
-                value={filters.amountMax}
-                onChange={(e) => setFilters({ ...filters, amountMax: e.target.value })}
-              />
-            </div>
-
-            <div className="flex items-end">
-              <Button 
-                variant="outline" 
-                onClick={() => setFilters({
-                  searchTerm: '',
-                  type: 'all',
-                  paymentMethod: 'all',
-                  status: 'all',
-                  insurance: 'all',
-                  dateFrom: '',
-                  dateTo: '',
-                  amountMin: '',
-                  amountMax: ''
-                })}
-                className="w-full"
-              >
-                Réinitialiser
-              </Button>
-            </div>
+            <Input
+              type="date"
+              placeholder="Date fin"
+              value={filters.dateTo}
+              onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+            />
           </div>
         </CardContent>
       </Card>
@@ -398,154 +301,137 @@ const EncaissementManagement = () => {
       {/* Encaissements Table */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Liste des Encaissements ({filteredEncaissements.length})</CardTitle>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Exporter
-              </Button>
-              <Button size="sm" onClick={() => setShowAddModal(true)} className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 hover:border-primary/30" variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Nouvel Encaissement
-              </Button>
-            </div>
-          </div>
+          <CardTitle>Liste des Encaissements</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="bg-background/50 rounded-lg border border-border-primary/10">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-surface-elevated/50 hover:bg-surface-elevated/70">
-                  <TableHead className="font-semibold text-text-primary">Date</TableHead>
-                  <TableHead className="font-semibold text-text-primary">Patient</TableHead>
-                  <TableHead className="font-semibold text-text-primary">Service</TableHead>
-                  <TableHead className="font-semibold text-text-primary">Montant</TableHead>
-                  <TableHead className="font-semibold text-text-primary">Mode Paiement</TableHead>
-                  <TableHead className="font-semibold text-text-primary">Statut</TableHead>
-                  <TableHead className="font-semibold text-text-primary">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEncaissements.map((encaissement) => {
-                  const PaymentIcon = getPaymentIcon(encaissement.paymentMethod);
-                  return (
-                    <EncaissementContextMenu
-                      key={encaissement.id}
-                      encaissement={encaissement}
-                      onView={() => console.log('View:', encaissement.id)}
-                      onEdit={() => handleEditEncaissement(encaissement)}
-                      onDelete={() => handleDeleteEncaissement(encaissement)}
-                      onDuplicate={() => console.log('Duplicate:', encaissement.id)}
-                      onMarkPaid={() => console.log('Mark paid:', encaissement.id)}
-                      onMarkPending={() => console.log('Mark pending:', encaissement.id)}
-                      onDownloadReceipt={() => console.log('Download receipt:', encaissement.id)}
-                    >
-                      <TableRow className="hover:bg-surface-elevated/30 transition-colors cursor-pointer">
-                        <TableCell className="font-medium py-3">{encaissement.date}</TableCell>
-                        <TableCell className="py-3">
-                          <div>
-                            <p className="font-medium">{encaissement.patient}</p>
-                            <p className="text-sm text-text-secondary">{encaissement.reference}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-3">{encaissement.type}</TableCell>
-                        <TableCell className="font-semibold py-3">{encaissement.amount.toFixed(2)} TND</TableCell>
-                        <TableCell className="py-3">
-                          <div className="flex items-center space-x-2">
-                            <PaymentIcon className="w-4 h-4 text-muted-foreground" />
-                            <span>{encaissement.paymentMethod}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-3">
-                          <Badge className={getStatusColor(encaissement.status)}>
-                            {encaissement.status}
-                          </Badge>
-                          {encaissement.insurance && (
-                            <p className="text-xs text-primary mt-1">{encaissement.insurance}</p>
-                          )}
-                        </TableCell>
-                        <TableCell className="py-3">
-                          <div className="flex items-center space-x-1">
-                            <Button variant="ghost" size="sm" className="hover:bg-surface-elevated">
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="hover:bg-surface-elevated"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditEncaissement(encaissement);
-                              }}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteEncaissement(encaissement);
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    </EncaissementContextMenu>
+          <div className="space-y-4">
+            {filteredData.map((encaissement) => (
+              <EncaissementContextMenu
+                key={encaissement.id}
+                encaissement={encaissement}
+                onView={() => handleRowClick(encaissement)}
+                onEdit={() => {
+                  setSelectedEncaissement(encaissement);
+                  setShowEditModal(true);
+                }}
+                onDelete={() => {
+                  setEncaissementsData(prev => prev.filter(e => e.id !== encaissement.id));
+                }}
+                onDuplicate={() => {
+                  const newEncaissement = { 
+                    ...encaissement, 
+                    id: 'ENC-' + String(Date.now()).slice(-3),
+                    date: new Date().toISOString().split('T')[0]
+                  };
+                  setEncaissementsData(prev => [newEncaissement, ...prev]);
+                }}
+                onMarkPaid={() => {
+                  setEncaissementsData(prev => 
+                    prev.map(e => e.id === encaissement.id ? { ...e, status: 'Encaissé' } : e)
                   );
-                })}
-              </TableBody>
-            </Table>
+                }}
+                onMarkPending={() => {
+                  setEncaissementsData(prev => 
+                    prev.map(e => e.id === encaissement.id ? { ...e, status: 'En attente' } : e)
+                  );
+                }}
+                onDownloadReceipt={() => {
+                  console.log('Downloading receipt for', encaissement.invoice);
+                }}
+              >
+                <div 
+                  className="flex items-center justify-between p-4 border border-border-primary rounded-lg hover:bg-hover-surface cursor-pointer transition-colors"
+                  onClick={() => handleRowClick(encaissement)}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-blue-100 p-2 rounded-lg">
+                      {getStatusIcon(encaissement.status)}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <h4 className="font-medium text-text-primary">{encaissement.id}</h4>
+                        <Badge className={getStatusColor(encaissement.status)}>
+                          {encaissement.status}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-text-secondary">
+                            <User className="w-3 h-3 inline mr-1" />
+                            {encaissement.patient}
+                          </p>
+                          <p className="text-text-secondary">
+                            <Calendar className="w-3 h-3 inline mr-1" />
+                            {encaissement.date}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-text-secondary">
+                            <FileText className="w-3 h-3 inline mr-1" />
+                            {encaissement.invoice}
+                          </p>
+                          <p className="text-text-secondary">
+                            <CreditCard className="w-3 h-3 inline mr-1" />
+                            {encaissement.paymentMethod}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-text-muted mt-1">{encaissement.description}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right mr-6">
+                    <p className="font-semibold text-lg text-text-primary">
+                      {encaissement.amount.toFixed(2)} TND
+                    </p>
+                    <p className="text-sm text-text-secondary">{encaissement.service}</p>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button variant="ghost" size="sm">
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm">
+                      <Download className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </EncaissementContextMenu>
+            ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Add Modal */}
-      <AddEncaissementModal
-        open={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSave={handleAddEncaissement}
-      />
+      {/* Modals */}
+      {showAddModal && (
+        <AddEncaissementModal 
+          onClose={() => setShowAddModal(false)}
+          onSubmit={(newEncaissement) => {
+            setEncaissementsData(prev => [newEncaissement, ...prev]);
+            setShowAddModal(false);
+          }}
+        />
+      )}
 
-      {/* Edit Modal */}
-      <EditEncaissementModal
-        encaissement={editingEncaissement}
-        open={!!editingEncaissement}
-        onClose={() => setEditingEncaissement(null)}
-        onSave={handleSaveEncaissement}
-      />
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p>Êtes-vous sûr de vouloir supprimer cet encaissement ?</p>
-            {encaissementToDelete && (
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="font-medium">{encaissementToDelete.patient}</p>
-                <p className="text-sm text-text-secondary">
-                  {encaissementToDelete.type} - {encaissementToDelete.amount.toFixed(2)} TND
-                </p>
-              </div>
-            )}
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
-                Annuler
-              </Button>
-              <Button variant="destructive" onClick={confirmDelete}>
-                Supprimer
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {showEditModal && selectedEncaissement && (
+        <EditEncaissementModal
+          encaissement={selectedEncaissement}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedEncaissement(null);
+          }}
+          onSubmit={(updatedEncaissement) => {
+            setEncaissementsData(prev => 
+              prev.map(e => e.id === updatedEncaissement.id ? updatedEncaissement : e)
+            );
+            setShowEditModal(false);
+            setSelectedEncaissement(null);
+          }}
+        />
+      )}
     </div>
   );
 };

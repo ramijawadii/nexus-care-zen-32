@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,8 +23,12 @@ import {
   Clock,
   AlertTriangle
 } from 'lucide-react';
+import InvoiceDetailView from '../billing/InvoiceDetailView';
 
 const InvoiceBillingView = () => {
+  const [showInvoiceDetail, setShowInvoiceDetail] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+
   const [invoicesData, setInvoicesData] = useState([
     {
       id: 'FACT-001',
@@ -105,6 +108,25 @@ const InvoiceBillingView = () => {
     setFilteredData(filtered);
   }, [filters, invoicesData]);
 
+  const handleRowClick = (invoice) => {
+    // Convert invoice to the expected format for the detail view
+    const invoiceData = {
+      id: invoice.id,
+      date: invoice.date,
+      description: invoice.services.join(', '),
+      amount: invoice.amountTTC,
+      status: invoice.status === 'Payé' ? 'paid' : invoice.status === 'Partiel' ? 'pending' : 'pending',
+      invoice: invoice.invoiceNumber
+    };
+    setSelectedInvoice(invoiceData);
+    setShowInvoiceDetail(true);
+  };
+
+  const handleBackToList = () => {
+    setShowInvoiceDetail(false);
+    setSelectedInvoice(null);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Payé': return 'bg-green-100 text-green-800';
@@ -128,6 +150,15 @@ const InvoiceBillingView = () => {
   const totalAmountTTC = filteredData.reduce((sum, item) => sum + item.amountTTC, 0);
   const paidAmount = filteredData.filter(item => item.status === 'Payé').reduce((sum, item) => sum + item.amountTTC, 0);
   const unpaidAmount = filteredData.filter(item => item.status === 'Non payé').reduce((sum, item) => sum + item.amountTTC, 0);
+
+  if (showInvoiceDetail && selectedInvoice) {
+    return (
+      <InvoiceDetailView 
+        invoice={selectedInvoice}
+        onBack={handleBackToList}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -282,7 +313,11 @@ const InvoiceBillingView = () => {
         <CardContent>
           <div className="space-y-4">
             {filteredData.map((invoice) => (
-              <div key={invoice.id} className="flex items-center justify-between p-4 border border-border-primary rounded-lg hover:bg-hover-surface">
+              <div 
+                key={invoice.id} 
+                className="flex items-center justify-between p-4 border border-border-primary rounded-lg hover:bg-hover-surface cursor-pointer transition-colors"
+                onClick={() => handleRowClick(invoice)}
+              >
                 <div className="flex items-center space-x-4">
                   <div className="bg-blue-100 p-2 rounded-lg">
                     {getStatusIcon(invoice.status)}
