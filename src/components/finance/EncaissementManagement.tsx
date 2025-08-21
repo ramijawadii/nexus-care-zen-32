@@ -408,8 +408,9 @@ const EncaissementManagement = () => {
       {/* Modals */}
       {showAddModal && (
         <AddEncaissementModal 
+          open={showAddModal}
           onClose={() => setShowAddModal(false)}
-          onSubmit={(newEncaissement) => {
+          onSave={(newEncaissement) => {
             setEncaissementsData(prev => [newEncaissement, ...prev]);
             setShowAddModal(false);
           }}
@@ -419,11 +420,12 @@ const EncaissementManagement = () => {
       {showEditModal && selectedEncaissement && (
         <EditEncaissementModal
           encaissement={selectedEncaissement}
+          open={showEditModal}
           onClose={() => {
             setShowEditModal(false);
             setSelectedEncaissement(null);
           }}
-          onSubmit={(updatedEncaissement) => {
+          onSave={(updatedEncaissement) => {
             setEncaissementsData(prev => 
               prev.map(e => e.id === updatedEncaissement.id ? updatedEncaissement : e)
             );

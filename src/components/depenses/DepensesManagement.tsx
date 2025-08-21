@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -341,7 +340,7 @@ const DepensesManagement = () => {
                 {filteredData.map((expense) => (
                   <DepenseContextMenu
                     key={expense.id}
-                    depense={expense}
+                    expense={expense}
                     onView={() => handleRowClick(expense)}
                     onEdit={() => {
                       setSelectedExpense(expense);
@@ -367,6 +366,9 @@ const DepensesManagement = () => {
                       setExpensesData(prev => 
                         prev.map(e => e.id === expense.id ? { ...e, status: 'En attente' } : e)
                       );
+                    }}
+                    onDownloadReceipt={() => {
+                      console.log('Downloading receipt for', expense.invoice);
                     }}
                   >
                     <div 
@@ -444,11 +446,12 @@ const DepensesManagement = () => {
       {showEditModal && selectedExpense && (
         <EditExpenseModal
           expense={selectedExpense}
+          open={showEditModal}
           onClose={() => {
             setShowEditModal(false);
             setSelectedExpense(null);
           }}
-          onSubmit={(updatedExpense) => {
+          onSave={(updatedExpense) => {
             setExpensesData(prev => 
               prev.map(e => e.id === updatedExpense.id ? updatedExpense : e)
             );
