@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { patientService, type SimplePatient, type PaginationParams, type SearchParams, type ApiResponse } from '@/services/database';
+import { patientService, type SimplePatient, type PatientInsert, type PatientUpdate, type PaginationParams, type SearchParams, type ApiResponse } from '@/services/database';
 
 export const usePatients = (params?: PaginationParams & SearchParams) => {
   const [patients, setPatients] = useState<SimplePatient[]>([]);
@@ -27,7 +27,7 @@ export const usePatients = (params?: PaginationParams & SearchParams) => {
     fetchPatients();
   }, [JSON.stringify(params)]);
 
-  const createPatient = async (patientData: Partial<SimplePatient>) => {
+  const createPatient = async (patientData: PatientInsert) => {
     const response = await patientService.createPatient(patientData);
     
     if (response.error) {
@@ -39,7 +39,7 @@ export const usePatients = (params?: PaginationParams & SearchParams) => {
     return response.data;
   };
 
-  const updatePatient = async (id: string, updates: Partial<SimplePatient>) => {
+  const updatePatient = async (id: string, updates: PatientUpdate) => {
     const response = await patientService.updatePatient(id, updates);
     
     if (response.error) {

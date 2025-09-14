@@ -1,15 +1,50 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
-// Simple type definitions to avoid deep type recursion
+// Simplified types to avoid deep type recursion
 export interface SimplePatient {
   id: string;
   mrn: string;
   full_name: string;
   date_of_birth: string;
-  gender: string;
+  gender: 'male' | 'female' | 'other';
+  national_id?: string | null;
+  passport?: string | null;
+  status: 'active' | 'inactive' | 'archived' | 'deceased';
+  photo_url?: string | null;
+  profession?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  address_street?: string | null;
+  address_city?: string | null;
+  address_state?: string | null;
+  address_zip_code?: string | null;
+  address_country?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_relationship?: string | null;
+  emergency_contact_phone?: string | null;
+  blood_type?: string | null;
+  allergies?: string[] | null;
+  chronic_conditions?: string[] | null;
+  insurance_provider?: string | null;
+  insurance_number?: string | null;
+  preferred_language?: string | null;
+  last_visit?: string | null;
+  next_appointment?: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  created_by?: string | null;
+}
+
+export interface PatientInsert {
+  mrn?: string;
+  full_name: string;
+  date_of_birth: string;
+  gender: 'male' | 'female' | 'other';
   national_id?: string;
   passport?: string;
-  status: string;
+  status?: 'active' | 'inactive' | 'archived' | 'deceased';
   photo_url?: string;
   profession?: string;
   email?: string;
@@ -29,11 +64,35 @@ export interface SimplePatient {
   insurance_provider?: string;
   insurance_number?: string;
   preferred_language?: string;
-  last_visit?: string;
-  next_appointment?: string;
-  created_at: string;
-  updated_at: string;
   created_by?: string;
+}
+
+export interface PatientUpdate {
+  full_name?: string;
+  date_of_birth?: string;
+  gender?: 'male' | 'female' | 'other';
+  national_id?: string;
+  passport?: string;
+  status?: 'active' | 'inactive' | 'archived' | 'deceased';
+  photo_url?: string;
+  profession?: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+  address_street?: string;
+  address_city?: string;
+  address_state?: string;
+  address_zip_code?: string;
+  address_country?: string;
+  emergency_contact_name?: string;
+  emergency_contact_relationship?: string;
+  emergency_contact_phone?: string;
+  blood_type?: string;
+  allergies?: string[];
+  chronic_conditions?: string[];
+  insurance_provider?: string;
+  insurance_number?: string;
+  preferred_language?: string;
 }
 
 export interface SimpleAppointment {
@@ -42,33 +101,78 @@ export interface SimpleAppointment {
   doctor_id: string;
   appointment_date: string;
   appointment_time: string;
-  duration_minutes: number;
+  duration_minutes: number | null;
+  reason: string;
+  notes?: string | null;
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no-show' | null;
+  type: 'consultation' | 'follow-up' | 'emergency' | 'procedure' | null;
+  location?: string | null;
+  is_recurring: boolean | null;
+  recurring_pattern?: any;
+  reminder_sent: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
+  created_by?: string | null;
+}
+
+export interface AppointmentInsert {
+  patient_id: string;
+  doctor_id: string;
+  appointment_date: string;
+  appointment_time: string;
+  duration_minutes?: number;
   reason: string;
   notes?: string;
-  status: string;
-  type: string;
+  status?: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no-show';
+  type?: 'consultation' | 'follow-up' | 'emergency' | 'procedure';
   location?: string;
-  is_recurring: boolean;
+  is_recurring?: boolean;
   recurring_pattern?: any;
-  reminder_sent: boolean;
-  created_at: string;
-  updated_at: string;
+  reminder_sent?: boolean;
   created_by?: string;
+}
+
+export interface AppointmentUpdate {
+  patient_id?: string;
+  doctor_id?: string;
+  appointment_date?: string;
+  appointment_time?: string;
+  duration_minutes?: number;
+  reason?: string;
+  notes?: string;
+  status?: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no-show';
+  type?: 'consultation' | 'follow-up' | 'emergency' | 'procedure';
+  location?: string;
+  is_recurring?: boolean;
+  recurring_pattern?: any;
+  reminder_sent?: boolean;
 }
 
 export interface SimpleProfile {
   id: string;
   full_name: string;
   email: string;
+  phone?: string | null;
+  avatar_url?: string | null;
+  role: 'admin' | 'doctor' | 'nurse' | 'receptionist' | 'manager';
+  specialization?: string | null;
+  license_number?: string | null;
+  department?: string | null;
+  is_active: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface ProfileUpdate {
+  full_name?: string;
+  email?: string;
   phone?: string;
   avatar_url?: string;
-  role: string;
+  role?: 'admin' | 'doctor' | 'nurse' | 'receptionist' | 'manager';
   specialization?: string;
   license_number?: string;
   department?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  is_active?: boolean;
 }
 
 export interface ApiResponse<T> {
@@ -95,7 +199,7 @@ export const patientService = {
   // Get all patients with pagination and search
   async getPatients(params?: PaginationParams & SearchParams): Promise<ApiResponse<SimplePatient[]>> {
     try {
-      let query = supabase
+      let query: any = supabase
         .from('patients')
         .select('*', { count: 'exact' });
 
@@ -108,7 +212,7 @@ export const patientService = {
       if (params?.filters) {
         Object.entries(params.filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null && value !== '') {
-            query = query.eq(key, value);
+            query = query.eq(key, value) as any;
           }
         });
       }
@@ -124,7 +228,7 @@ export const patientService = {
 
       if (error) throw error;
 
-      return { data: data || [], count };
+      return { data: (data || []) as SimplePatient[], count };
     } catch (error: any) {
       return { error: error.message };
     }
@@ -148,7 +252,7 @@ export const patientService = {
   },
 
   // Create new patient
-  async createPatient(patient: Partial<SimplePatient>): Promise<ApiResponse<SimplePatient>> {
+  async createPatient(patient: PatientInsert): Promise<ApiResponse<SimplePatient>> {
     try {
       // Generate MRN
       const { data: mrnData, error: mrnError } = await supabase.rpc('generate_mrn');
@@ -174,7 +278,7 @@ export const patientService = {
   },
 
   // Update patient
-  async updatePatient(id: string, updates: Partial<SimplePatient>): Promise<ApiResponse<SimplePatient>> {
+  async updatePatient(id: string, updates: PatientUpdate): Promise<ApiResponse<SimplePatient>> {
     try {
       const { data, error } = await supabase
         .from('patients')
@@ -216,7 +320,7 @@ export const appointmentService = {
   // Get appointments with filters
   async getAppointments(params?: PaginationParams & SearchParams): Promise<ApiResponse<SimpleAppointment[]>> {
     try {
-      let query = supabase
+      let query: any = supabase
         .from('appointments')
         .select('*', { count: 'exact' })
         .order('appointment_date', { ascending: true })
@@ -229,7 +333,7 @@ export const appointmentService = {
             if (key === 'appointment_date' && typeof value === 'object' && value.gte && value.lte) {
               query = query.gte('appointment_date', value.gte).lte('appointment_date', value.lte);
             } else {
-              query = query.eq(key, value);
+              query = query.eq(key, value) as any;
             }
           }
         });
@@ -246,14 +350,14 @@ export const appointmentService = {
 
       if (error) throw error;
 
-      return { data: data || [], count };
+      return { data: (data || []) as SimpleAppointment[], count };
     } catch (error: any) {
       return { error: error.message };
     }
   },
 
   // Create appointment
-  async createAppointment(appointment: Partial<SimpleAppointment>): Promise<ApiResponse<SimpleAppointment>> {
+  async createAppointment(appointment: AppointmentInsert): Promise<ApiResponse<SimpleAppointment>> {
     try {
       const { data, error } = await supabase
         .from('appointments')
@@ -270,7 +374,7 @@ export const appointmentService = {
   },
 
   // Update appointment
-  async updateAppointment(id: string, updates: Partial<SimpleAppointment>): Promise<ApiResponse<SimpleAppointment>> {
+  async updateAppointment(id: string, updates: AppointmentUpdate): Promise<ApiResponse<SimpleAppointment>> {
     try {
       const { data, error } = await supabase
         .from('appointments')
@@ -330,7 +434,7 @@ export const profileService = {
   },
 
   // Update profile
-  async updateProfile(updates: Partial<SimpleProfile>): Promise<ApiResponse<SimpleProfile>> {
+  async updateProfile(updates: ProfileUpdate): Promise<ApiResponse<SimpleProfile>> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
@@ -351,7 +455,7 @@ export const profileService = {
   },
 
   // Get all profiles (for doctors list, etc.)
-  async getProfiles(role?: string): Promise<ApiResponse<SimpleProfile[]>> {
+  async getProfiles(role?: 'admin' | 'doctor' | 'nurse' | 'receptionist' | 'manager'): Promise<ApiResponse<SimpleProfile[]>> {
     try {
       let query = supabase
         .from('profiles')

@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
 import { appointmentService, type SimpleAppointment, type PaginationParams, type SearchParams } from '@/services/database';
+import type { Database } from '@/integrations/supabase/types';
+
+type AppointmentInsert = Database['public']['Tables']['appointments']['Insert'];
+type AppointmentUpdate = Database['public']['Tables']['appointments']['Update'];
 
 export const useAppointments = (params?: PaginationParams & SearchParams) => {
   const [appointments, setAppointments] = useState<SimpleAppointment[]>([]);
