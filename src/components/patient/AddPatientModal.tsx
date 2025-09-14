@@ -14,14 +14,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PatientInsert } from '@/services/database';
-import { useToast } from '@/hooks/use-toast';
 
 interface AddPatientModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPatientCreated?: () => void;
-  createPatient: (patient: PatientInsert) => Promise<any>;
 }
 
 interface PatientFormData {
@@ -67,11 +63,9 @@ const initialFormData: PatientFormData = {
   appointmentTime: ''
 };
 
-const AddPatientModal = ({ open, onOpenChange, onPatientCreated, createPatient }: AddPatientModalProps) => {
+const AddPatientModal = ({ open, onOpenChange }: AddPatientModalProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<PatientFormData>(initialFormData);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
 
   const steps = [
     { id: 1, title: 'Informations Personnelles', icon: User },
@@ -92,53 +86,12 @@ const AddPatientModal = ({ open, onOpenChange, onPatientCreated, createPatient }
     }
   };
 
-  const handleSubmit = async () => {
-    if (!formData.firstName || !formData.lastName || !formData.dateOfBirth || !formData.phone) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez remplir tous les champs obligatoires.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const patientData: PatientInsert = {
-        full_name: `${formData.firstName} ${formData.lastName}`,
-        date_of_birth: formData.dateOfBirth,
-        gender: formData.gender as 'male' | 'female' | 'other',
-        phone: formData.phone,
-        email: formData.email || undefined,
-        address_street: formData.address || undefined,
-        emergency_contact_name: formData.emergencyContactName || undefined,
-        emergency_contact_phone: formData.emergencyContactPhone || undefined,
-        emergency_contact_relationship: formData.emergencyContactRelationship || undefined,
-        insurance_provider: formData.insuranceProvider || undefined,
-        insurance_number: formData.insuranceNumber || undefined,
-      };
-
-      await createPatient(patientData);
-      
-      onOpenChange(false);
-      setCurrentStep(1);
-      setFormData(initialFormData);
-      onPatientCreated?.();
-      
-      toast({
-        title: "Patient créé",
-        description: "Le nouveau patient a été ajouté avec succès."
-      });
-    } catch (error) {
-      console.error('Error creating patient:', error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de la création du patient.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSubmit = () => {
+    // Here you would typically send the data to your backend
+    console.log('Patient data:', formData);
+    onOpenChange(false);
+    setCurrentStep(1);
+    setFormData(initialFormData);
   };
 
   const updateFormData = (field: string, value: string) => {
@@ -421,11 +374,10 @@ const AddPatientModal = ({ open, onOpenChange, onPatientCreated, createPatient }
           ) : (
             <Button 
               onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 hover:text-blue-700 hover:border-blue-300 disabled:opacity-50"
+              className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 hover:text-blue-700 hover:border-blue-300"
               variant="outline"
             >
-              {isSubmitting ? 'Création...' : 'Créer le patient'}
+              Créer le patient
             </Button>
           )}
         </div>
