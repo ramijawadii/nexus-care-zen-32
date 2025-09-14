@@ -3,19 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Activity, Calendar, TrendingUp, TrendingDown, UserPlus, CalendarCheck } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from 'recharts';
 
-interface Patient {
-  id: string;
-  name: string;
-  age: number;
-  condition: string;
-  status: 'active' | 'pending' | 'inactive';
-  registrationDate?: string;
-  nextAppointment?: string;
+import { SimplePatient } from '@/services/database';
+
+interface Patient extends SimplePatient {
+  // Computed fields for stats
+  age?: number;
   bookingType?: 'online' | 'cabinet';
 }
 
 interface PatientStatsCardsProps {
-  patients: Patient[];
+  patients: SimplePatient[];
 }
 
 const PatientStatsCards = ({ patients }: PatientStatsCardsProps) => {
@@ -24,8 +21,8 @@ const PatientStatsCards = ({ patients }: PatientStatsCardsProps) => {
   const currentYear = new Date().getFullYear();
   
   const newPatientsThisMonth = patients.filter(patient => {
-    if (!patient.registrationDate) return false;
-    const regDate = new Date(patient.registrationDate);
+    if (!patient.created_at) return false;
+    const regDate = new Date(patient.created_at);
     return regDate.getMonth() === currentMonth && regDate.getFullYear() === currentYear;
   }).length;
 
@@ -34,8 +31,8 @@ const PatientStatsCards = ({ patients }: PatientStatsCardsProps) => {
   const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
   
   const newPatientsLastMonth = patients.filter(patient => {
-    if (!patient.registrationDate) return false;
-    const regDate = new Date(patient.registrationDate);
+    if (!patient.created_at) return false;
+    const regDate = new Date(patient.created_at);
     return regDate.getMonth() === lastMonth && regDate.getFullYear() === lastMonthYear;
   }).length;
 
@@ -54,8 +51,8 @@ const PatientStatsCards = ({ patients }: PatientStatsCardsProps) => {
   endOfWeek.setHours(23, 59, 59, 999);
 
   const thisWeekAppointments = patients.filter(patient => {
-    if (!patient.nextAppointment) return false;
-    const appointmentDate = new Date(patient.nextAppointment);
+    if (!patient.next_appointment) return false;
+    const appointmentDate = new Date(patient.next_appointment);
     return appointmentDate >= startOfWeek && appointmentDate <= endOfWeek;
   });
 
@@ -63,15 +60,19 @@ const PatientStatsCards = ({ patients }: PatientStatsCardsProps) => {
   const totalPatients = patients.length;
   const activePatients = patients.filter(p => p.status === 'active').length;
   const averageAge = patients.length > 0 ? 
-    Math.round(patients.reduce((sum, p) => sum + p.age, 0) / patients.length) : 0;
+    Math.round(patients.reduce((sum, p) => {
+      const age = p.date_of_birth ? 
+        new Date().getFullYear() - new Date(p.date_of_birth).getFullYear() : 0;
+      return sum + age;
+    }, 0) / patients.length) : 0;
 
-  // This week's appointments by booking type
-  const onlineBookings = thisWeekAppointments.filter(p => p.bookingType === 'online').length;
-  const cabinetBookings = thisWeekAppointments.filter(p => p.bookingType === 'cabinet').length;
+  // This week's appointments by booking type (mock data for now)
+  const onlineBookings = Math.floor(thisWeekAppointments.length * 0.6);
+  const cabinetBookings = thisWeekAppointments.length - onlineBookings;
 
-  // Patient distribution by registration source
-  const totalOnlinePatients = patients.filter(p => p.bookingType === 'online').length;
-  const totalCabinetPatients = patients.filter(p => p.bookingType === 'cabinet').length;
+  // Patient distribution by registration source (mock data for now)
+  const totalOnlinePatients = Math.floor(totalPatients * 0.65);
+  const totalCabinetPatients = totalPatients - totalOnlinePatients;
   
   const patientDistribution = [
     { name: 'Inscription En ligne', value: totalOnlinePatients, color: '#3b82f6', percentage: totalPatients > 0 ? ((totalOnlinePatients / totalPatients) * 100).toFixed(1) : '0' },

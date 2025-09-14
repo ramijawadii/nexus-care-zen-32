@@ -9,18 +9,15 @@ import {
   ContextMenuSeparator 
 } from '@/components/ui/context-menu';
 
-interface Patient {
-  id: string;
-  name: string;
-  age: number;
-  condition: string;
-  lastVisit: string;
-  status: 'active' | 'pending' | 'inactive';
-  riskLevel: 'low' | 'medium' | 'high';
+import { SimplePatient } from '@/services/database';
+
+interface Patient extends SimplePatient {
+  // Add computed fields for display
+  age?: number;
+  condition?: string;
+  riskLevel?: 'low' | 'medium' | 'high';
   isInCabinet?: boolean;
   nextSession?: string;
-  phone?: string;
-  emergencyContact?: string;
   appointmentHistory?: Array<{
     id: string;
     date: string;
@@ -125,25 +122,35 @@ const formatDate = (dateString: string) => {
 
 const PatientCard = ({ patient }: PatientCardProps) => {
   const navigate = useNavigate();
+  
+  // Compute display values from database fields
+  const displayPatient: Patient = {
+    ...patient,
+    age: patient.date_of_birth ? 
+      new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear() : 
+      undefined,
+    condition: patient.chronic_conditions?.join(', ') || 'Aucune condition connue',
+    riskLevel: 'low', // Default risk level, could be computed from conditions
+  };
 
   const handleViewInCalendar = (patient: Patient, event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    console.log(`Viewing ${patient.name}'s appointment in calendar`);
+    console.log(`Viewing ${patient.full_name}'s appointment in calendar`);
     navigate('/appointments');
   };
 
   const handleChangeTime = (patient: Patient, event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    console.log(`Changing appointment time for ${patient.name}`);
+    console.log(`Changing appointment time for ${patient.full_name}`);
     // Open time change modal or navigate to scheduling
   };
 
   const handleTeamChat = (patient: Patient, event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    const message = `Discussion concernant ${patient.name} - RDV du ${formatDate(patient.nextAppointment?.date || '')} à ${patient.nextAppointment?.time}`;
+    const message = `Discussion concernant ${patient.full_name} - RDV du ${formatDate(patient.nextAppointment?.date || '')} à ${patient.nextAppointment?.time}`;
     console.log(`Opening team chat with message: ${message}`);
     // Open team chat with pre-filled message
   };
@@ -151,14 +158,14 @@ const PatientCard = ({ patient }: PatientCardProps) => {
   const handleViewProfile = (patient: Patient, event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    console.log(`Viewing ${patient.name}'s profile`);
+    console.log(`Viewing ${patient.full_name}'s profile`);
     navigate(`/patient/${patient.id}`);
   };
 
   const handleEditPatient = (patient: Patient, event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    console.log(`Editing ${patient.name}'s information`);
+    console.log(`Editing ${patient.full_name}'s information`);
     // Open edit patient modal
   };
 
@@ -173,7 +180,7 @@ const PatientCard = ({ patient }: PatientCardProps) => {
   const handleDeletePatient = (patient: Patient, event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    console.log(`Deleting ${patient.name}`);
+    console.log(`Deleting ${patient.full_name}`);
     // Show confirmation dialog and delete patient
   };
 
@@ -186,37 +193,41 @@ const PatientCard = ({ patient }: PatientCardProps) => {
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <h3 className="font-semibold text-text-primary group-hover:text-text-primary transition-colors">
-              {patient.name}
+              {displayPatient.full_name}
             </h3>
-            <p className="text-text-muted text-sm">Âge {patient.age}</p>
+            <p className="text-text-muted text-sm">
+              {displayPatient.age ? `Âge ${displayPatient.age}` : 'Âge non spécifié'}
+            </p>
           </div>
           <div className="flex items-center space-x-2">
-            {getStatusIcon(patient.status)}
-            <span className={getRiskBadge(patient.riskLevel)}>
-              {patient.riskLevel === 'high' ? 'Risque élevé' :
-               patient.riskLevel === 'medium' ? 'Risque moyen' : 'Faible risque'}
+            {getStatusIcon(displayPatient.status || 'active')}
+            <span className={getRiskBadge(displayPatient.riskLevel || 'low')}>
+              {displayPatient.riskLevel === 'high' ? 'Risque élevé' :
+               displayPatient.riskLevel === 'medium' ? 'Risque moyen' : 'Faible risque'}
             </span>
           </div>
         </div>
 
         {/* Live Status */}
         <div className="mb-3">
-          {getLiveStatusIndicator(patient.isInCabinet, patient.nextSession)}
+          {getLiveStatusIndicator(displayPatient.isInCabinet, displayPatient.nextSession)}
         </div>
 
         {/* Condition */}
         <div className="mb-4">
-          <p className="text-text-primary font-medium">{patient.condition}</p>
+          <p className="text-text-primary font-medium">{displayPatient.condition}</p>
         </div>
 
         {/* Last Visit */}
         <div className="flex items-center space-x-2 text-text-muted mb-4">
           <Calendar className="w-4 h-4" />
-          <span className="text-sm">Dernière visite: {formatDate(patient.lastVisit)}</span>
+          <span className="text-sm">
+            Dernière visite: {patient.last_visit ? formatDate(patient.last_visit) : 'Jamais'}
+          </span>
         </div>
 
         {/* Next Appointment with Context Menu */}
-        {patient.nextAppointment && (
+        {displayPatient.nextAppointment && (
           <ContextMenu>
             <ContextMenuTrigger asChild>
               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors" 
@@ -226,9 +237,9 @@ const PatientCard = ({ patient }: PatientCardProps) => {
                   <span className="text-sm font-medium text-blue-700">Prochain RDV</span>
                 </div>
                 <p className="text-sm text-blue-800 font-medium">
-                  {formatDate(patient.nextAppointment.date)} à {patient.nextAppointment.time}
+                  {formatDate(displayPatient.nextAppointment.date)} à {displayPatient.nextAppointment.time}
                 </p>
-                <p className="text-xs text-blue-600">{patient.nextAppointment.type}</p>
+                <p className="text-xs text-blue-600">{displayPatient.nextAppointment.type}</p>
               </div>
             </ContextMenuTrigger>
             <ContextMenuContent className="w-48">
@@ -250,17 +261,17 @@ const PatientCard = ({ patient }: PatientCardProps) => {
         )}
 
         {/* Appointment History Summary */}
-        {patient.appointmentHistory && patient.appointmentHistory.length > 0 && (
+        {displayPatient.appointmentHistory && displayPatient.appointmentHistory.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-text-secondary" />
                 <span className="text-sm font-medium text-text-primary">Historique RDV</span>
               </div>
-              <span className="text-xs text-text-muted">{patient.appointmentHistory.length} total</span>
+              <span className="text-xs text-text-muted">{displayPatient.appointmentHistory.length} total</span>
             </div>
             <div className="flex space-x-1">
-              {patient.appointmentHistory.slice(0, 3).map((apt) => (
+              {displayPatient.appointmentHistory.slice(0, 3).map((apt) => (
                 <Badge 
                   key={apt.id} 
                   variant={apt.status === 'completed' ? 'default' : 'secondary'}
@@ -269,24 +280,24 @@ const PatientCard = ({ patient }: PatientCardProps) => {
                   {apt.status === 'completed' ? '✓' : apt.status === 'cancelled' ? '✗' : '○'}
                 </Badge>
               ))}
-              {patient.appointmentHistory.length > 3 && (
-                <span className="text-xs text-text-muted">+{patient.appointmentHistory.length - 3}</span>
+              {displayPatient.appointmentHistory.length > 3 && (
+                <span className="text-xs text-text-muted">+{displayPatient.appointmentHistory.length - 3}</span>
               )}
             </div>
           </div>
         )}
 
         {/* Payment Status */}
-        {patient.paymentHistory && (
+        {displayPatient.paymentHistory && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
                 <CreditCard className="w-4 h-4 text-text-secondary" />
                 <span className="text-sm font-medium text-text-primary">Paiements</span>
               </div>
-              {patient.totalOutstanding && patient.totalOutstanding > 0 && (
+              {displayPatient.totalOutstanding && displayPatient.totalOutstanding > 0 && (
                 <Badge variant="destructive" className="text-xs">
-                  {patient.totalOutstanding}€ dû
+                  {displayPatient.totalOutstanding}€ dû
                 </Badge>
               )}
             </div>
@@ -294,13 +305,13 @@ const PatientCard = ({ patient }: PatientCardProps) => {
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 rounded-full bg-success"></div>
                 <span className="text-text-muted">
-                  {patient.paymentHistory.filter(p => p.status === 'paid').length} payé(s)
+                  {displayPatient.paymentHistory.filter(p => p.status === 'paid').length} payé(s)
                 </span>
               </div>
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 rounded-full bg-error"></div>
                 <span className="text-text-muted">
-                  {patient.paymentHistory.filter(p => p.status === 'unpaid').length} impayé(s)
+                  {displayPatient.paymentHistory.filter(p => p.status === 'unpaid').length} impayé(s)
                 </span>
               </div>
             </div>
